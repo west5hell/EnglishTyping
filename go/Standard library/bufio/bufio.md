@@ -112,3 +112,47 @@ type Reader struct {
 ```
 
 Reader implements buffering for an io.Reader object. A new Reader is created by calling NewReader or NewReaderSize; alternatively the zero value of a Reader may be used after calling [Reset] on it.
+
+**func NewReader**
+
+```go
+func NewReader(rd  io.Reader) *Reader
+```
+
+NewReader returns a new Reader whose buffer has the default size.
+
+**func NewReaderSize**
+
+```go
+func NewReaderSize(rd io.Reader, size int) *Reader
+```
+
+NewReaderSize returns a new Reader whose buffer has at least the specified size. If the argument io.Reader is already a Reader with large enough size, it returns the underlying Reader.
+
+**func (\*Reader) Buffered**
+
+```go
+func (b *Reader) Buffered() int
+```
+
+Buffered returns the number of bytes that can be read from the current buffer.
+
+**func (\*Reader) Discard**
+
+```go
+func (b *Reader) Discard(n int) (discard int, err error)
+```
+
+Discard skips the next n bytesm returning the number of bytes discarded.
+
+If Discard skips fewer than n bytes, it also returns an error. If 0 <= n <= b.Buffered(), Discard is guaranteed to succeed without reading from the underlying io.Reader.
+
+**func (\*Reader) Peek**
+
+```go
+func (b *Reader) Peek(n int) ([]bytes, error)
+```
+
+Peek returns the next n bytes without advancing the reader. The bytes stop being calid at the next read call. If necessary, Peek will read more bytes into the buffer in order to make n bytes available. If Peek returns fewer than n bytes, it also returns an error explaining why the read is short. The error is ErrBufferFull if n is larger than b's buffer size.
+
+Calling Peek prevents a Reader.UnreadByte or Reader.UnreadRune call from succeeding until the next read operation.
