@@ -270,3 +270,186 @@ type Scanner struct {
 Scanner provides a convenient interface for reading data such as a file of newline-delimited lines of text. Successive calss to the Scanner.Scan method will step through the 'tokens' of a file, skipping the bytes between the tokens. The specification of a token is defined by a split function of type SplitFunc; the default split function breaks the input into lines with line termination stripped. Scanner.Split functions are defined in this package for scanning a file into lines, bytes, UTF-8-encoded runes, and space-delimited words. The client may instead provide a custom split function.
 
 Scanning stops unrecoverably at EOF, the first I/O error, or a token too large to fit in the Scanner.Buffer. When a scan stops, the reader may have advanced arbitrarily far past the last token. Programs that need more control over error handling or large tokens, or must run sequential scans on a reader, should use bufio.Reader instead.
+
+###### Example(Custom)
+
+Use a Scanner with a custom split function (built by wrapping ScanWords) to validate 32-bit decimal input.
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	// An artificial input source.
+	const input = "1234 5678 1234567901234567890"
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	// Create a custom split function by wrapping the existing ScanWords function.
+	split := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		advance, token, err = bufio.ScanWords(data, atEOF)
+		if err == nil && token != nil {
+			_, err = strconv.ParseInt(string(token), 10, 32)
+		}
+		return
+	}
+	// Set the split function for the scanning operation.
+	scanner.Split(split)
+	// Validate the input
+	for scanner.Scan() {
+		fmt.Printf("%s\n", scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("Invalid input: %s", err)
+	}
+}
+```
+
+###### Example(EarlyStop)
+
+Use a Scanner with a custom split function to parse a comma-separated list with an empty final value but stops at the token "STOP".
+
+```go
+package main
+
+import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"os"
+	"strings"
+)
+
+func main() {
+	onComma := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		i := bytes.IndexByte(data, ',')
+		if i == -1 {
+			if !atEOF {
+				return 0, nil, nil
+			}
+			// If we have reached the end, return the last token.
+			return 0, data, bufio.ErrFinalToken
+		}
+		// If the token is "STOP", stop the scanning and ignore the rest.
+		if string(data[:i]) == "STOP" {
+			return i + 1, nil, bufio.ErrFinalToken
+		}
+		// Otherwise, return the token before the comma.
+		return i + 1, data[:i], nil
+	}
+	const input = "1,2,STOP,4,"
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	scanner.Split(onComma)
+	for scanner.Scan() {
+		fmt.Printf("Got a token %q\n", scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "reading input:", err)
+	}
+}
+```
+
+###### Example (EmptyFinalToken)
+
+Use a Scanner with a custom split function to parse a comma-separated list with an empty final value.
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+)
+
+func main() {
+	// Comma-separated list; last entry is empty.
+	const input = "1,2,3,4,"
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	// Define a split function that separates on commas.
+	onComma := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		for i := 0; i < len(data); i++ {
+			if data[i] == ',' {
+				return i + 1, data[:i], nil
+			}
+		}
+		if !atEOF {
+			return 0, nil, nil
+		}
+		// There is one final token to be delivered, which may be the empty string.
+		// Returning bufio.ErrFinalToken here tells Scan there are no more tokens after this
+		// but does not trigger an error to be returned from Scan itself.
+		return 0, data, bufio.ErrFinalToken
+	}
+	scanner.Split(onComma)
+	// Scan.
+	for scanner.Scan() {
+		fmt.Printf("%q ", scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "reading input:", err)
+	}
+}
+```
+
+###### Example (Lines)
+
+The simplest use of a Scanner, to read standard input as a set of lines.
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+func main() {
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text()) // Println will add back the final '\n'
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "reading standard input:", err)
+	}
+}
+```
+
+###### Example (Words)
+
+Use a Scanner to implement a simple word-count utility by scanning the input as a sequence of space-delimited tokens.
+
+```go
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+)
+
+func main() {
+	// An artificial input source.
+	const input = "Now is the winter of our discontent,\nMade glorious summer by this sun of York.\n"
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	// Set the split function for the scanning operation.
+	scanner.Split(bufio.ScanWords)
+	// Count the words.
+	count := 0
+	for scanner.Scan() {
+		count++
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "reading input:", err)
+	}
+	fmt.Printf("%d\n", count)
+}
+```
