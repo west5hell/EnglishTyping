@@ -216,3 +216,221 @@ The recover built-in function allows a program to manage behavior of a panicking
 Prior to Go 1.21, recover would also return nil if panic is called with a nil argument. See [panic] for details.
 
 # Types
+
+### type Complextype
+
+```go
+type ComplexType complex64
+```
+
+ComplexType is here for the purposes of documentation only. It is a stand-in for either complex type: complex64 or complex128.
+
+### type FloatType
+
+```go
+type FloatType float32
+```
+
+FloatType is here for the purposes of documentation only. It is a stand-in for either float type: float32 or float64.
+
+### type IntegerType
+
+```go
+type IntegerType int
+```
+
+IntegerType is here for the purposes of documentation only. It is a stand-in for any integer type: int, uint, int8 etc.
+
+### type Type
+
+```go
+type Type int
+```
+
+Type is here for the purposes of documentation only. It is a stand-in for any Go type, but represents the same type for any given function invocation.
+
+### type Type1
+
+```go
+type Type1 int
+```
+
+Type1 is here for purposes of documentation only. It is a stand-in for any Go type, but represents the same type for any given function invocation.
+
+### type any
+
+```go
+type any = interface{}
+```
+
+any is an alias for interface{} and equivalent to interface{} in all ways.
+
+### type bool
+
+```go
+type bool bool
+```
+
+bool is the set of boolean values, true and false.
+
+### type byte
+
+```go
+type byte = uint8
+```
+
+byte is an alias for uint8 and is equivalent to uint8 in all ways. It is used, by convention, to distinguish byte values from 8-bit unsigned integer values.
+
+### type comparable
+
+```go
+type comparable interface{ comparable }
+```
+
+comparable is an interface that is implemented by all comparable types (boolean, numbers, strings, pointers, channels, arrays of comparable types, structs whose fields are all comparable types). The comparable interface may only be used as a type parameter constraint, not as the type of a variable.
+
+### type complex128
+
+```go
+type complex128 complex128
+```
+
+complex128 is the set of all complex numbers with float64 read and imaginary parts.
+
+### type complex64
+
+```go
+type complex64 complex64
+```
+
+complex64 is the set of all complex numbers with float32 read and imaginary parts.
+
+### type error
+
+```go
+type error interface {
+    Error() string
+}
+```
+
+The error built-in interface type is the conventional interface for representing an error condition, with the nil value representing no error.
+
+### type float32
+
+```go
+type float32 float32
+```
+
+float32 is the set of all IEEE 754 32-bit floating-point numbers.
+
+### type float64
+
+```go
+type float64 float64
+```
+
+float64 is the set of all IEEE 754 64-bit floating-point numbers.
+
+### type int
+
+```go
+type int int
+```
+
+int is a signed integer type that is at least 32 bits in size. It is a distinct type, however, and not an alias for, say, int32.
+
+### type int16
+
+```go
+type int16 int16
+```
+
+int16 is the set of all signed 16-bit integers. Range: -32768 through 32767.
+
+### type int32
+
+```go
+type int32 int32
+```
+
+int32 is the set of all signed 32-bit integers. Range: -2147483648 through 2147483647.
+
+### type int64
+
+```go
+type int64 int64
+```
+
+int64 is the set of all signed 64-bit integers. Range: -9223372036854775808 through 9223372036854775807.
+
+### type int8
+
+```go
+type int8 int8
+```
+
+int8 is the set of all signed 8-bit integers. Range: -128 through 127.
+
+### type rune
+
+```go
+type rune = int32
+```
+
+rune is an alias for int32 and is equivalent to int32 in all ways. It is used, by convention, to distinguish character values from integer values.
+
+### type string
+
+```go
+type string string
+```
+
+string is the set of all strings of 8-bit bytes, conventionally but not necessarily representing UTF-8-encoded text. A string may be empty, but not nil. Values of string type are immutable.
+
+### type uint
+
+```go
+type uint uint
+```
+
+uint is an unsigned integer type that is at least 32 bits in size. It is a distinct type, however, and not an alias for, say, uint32.
+
+### type uint16
+
+```go
+type uint16 uint16
+```
+
+uint16 is the set of all unsigned 16-bit integers. Range: 0 through 65535.
+
+### type uint32
+
+```go
+type uint32 uint32
+```
+
+uint32 is the set of all unsigned 32-bit integers. Range: 0 through 4294967295.
+
+### type uint64
+
+```go
+type uint64 uint64
+```
+
+uint64 is the set of all unsigned 64-bit integers. Range: 0 through 18446744073709551615.
+
+### type uint8
+
+```go
+type uint8 uint8
+```
+
+uint8 is the set of all unsigned 8-bit integers. Range: 0 through 255.
+
+### type uintptr
+
+```go
+type uintptr uintptr
+```
+
+uintptr is an integer type that is large enough to hold the bit pattern of any pointer.
