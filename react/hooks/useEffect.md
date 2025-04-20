@@ -246,3 +246,125 @@ Writing data fetching directly in Effects gets reprtitve and makes it difficult 
 > you can continue fetching data directly in Effects if neither of these approaches suit you.
 
 ### Specifying reactive dependencies
+
+**Notice that you can't "choose" the dependencies of your Effect.** Every reactive value used by your Effect's code must be declared as a dependency. Your Effect's dependency list is determined by the surrounding code:
+
+```js
+function ChatRoom({ roomId }) {
+  // This is a reactive value
+  const [serverUrl, setServerUrl] = useState("https://localhost:1123"); // This is a reactive value too
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId); // This Effect reads these reactive values
+    connection.connect();
+    return () => connection.disconnect();
+  }, [serverUrl, roomId]); // ✅ So you must specify them as dependencies of your Effect
+  // ...
+}
+```
+
+If either `serverUrl` or `roomId` change, your Effect will reconnect to the chat using the new values.
+
+**Reactive values include props and all variables and functins declared directly inside of your component.** Since `roomId` and `serverUrl` are reactive values, you can't remove them from the dependencies. If you try to omit them and your linter is correctly configured for React, the linter will flag this as a mistake you need to fix:
+
+```js
+function ChatRoom({ roomId }) {
+  const [serverUrl, setServerUrl] = useState("https://localhost:1234");
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  }, []); // 🔴 React Hook useEffect has missing dependencies: 'roomId' and 'serverUrl'
+  // ...
+}
+```
+
+**To remove a dependency, you need to "prove" to the linter that is doesn't need to be a dependency.** For example, you can move `serverUrl` out of your component to prove that it's not reactive and won't change on re-renders:
+
+```js
+const serverUrl = "https://localhost:1234"; // Not a reactive value anymore
+
+function ChatRoom({ roomId }) {
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId]); // ✅ All dependencies declared
+  // ...
+}
+```
+
+Now that `serverUrl` is not a reactive value (and can't change on a re-render), it doesn't need to be a dependency. **If your Effect's code doesn't use any reactive values, its dependency list should be empty ([]):**
+
+```js
+const serverUrl = "https://localhost:1234"; // Not a reactive value anymore
+const roomId = "music"; // Not a reactive value anymore
+
+function ChatRoom() {
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  }, []); // ✅ All dependencies declared
+  // ...
+}
+```
+
+An Effect with empty dependencies doesn't re-run when any of your component's props or state change.
+
+> ## Pitfall
+>
+> if you have an existing codebase, you might have some Effects that suppress the linter like this:
+>
+> ```js
+> useEffect(() => {
+>   // ...
+>   // 🔴 Avoid suppressing the linter like this:
+>   // eslint-ignore-next-line react-hooks/exhaustive-deps
+> }, []);
+> ```
+>
+> **When dependencies don't match the code, there is a high risk of introducing bugs.** By suppressing the linter, you "lie" to React about the values your Effect depends on. Instead, prove they're unnecessary.
+
+### Updating state based on previous state from an Effect
+
+When you want to update state based on previous state from an Effect, you might run into a problem:
+
+```js
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCount(count + 1); // You want to increment the counter every second...
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [count]); // 🚩 ... but specifying `count` as a dependency always resets the interval.
+  // ...
+}
+```
+
+Since `count` is a reactive value, it must be specified in the list of dependencies. However, that causes the Effect to cleanup and setup again every time the `count` changes. This is not ideal.
+
+To fix this, pass the `c => c + 1` state updater to `setCount`:
+
+```js
+import { useState, useEffect } from "react";
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCount((c) => c + 1); // ✅ Pass a state updater
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, []); // ✅ Now count is not a dependency
+
+  return <h1>{count}</h1>;
+}
+```
+
+Now that you're passing `c => c + 1` instead of `count + 1`, your Effect no longer needs to depend on `count`. As a result of this fix, it won't need to cleanup and setup the interval again every time the `count` changes.
+
+### Removing unnecessary object dependencies
