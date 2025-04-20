@@ -49,3 +49,102 @@ function ChatRoom({ roomId }) {
 - If your Effect is caused by an interaction (like a click), **React may run your Effect before the browser paints the updated screen**. This ensures that the result of the Effect can be observed by the event system. Usually, this works as expected. However, if you must defer the work until after paint, such as an `alert()`, you can use `setTimeout`. See [reactwg/react-18/128](https://github.com/reactwg/react-18/discussions/128) for more information.
 - Even if your Effect was caused by an interaction (line a click), **React may allow the browser to repaint the screen before processing the state updates inside your Effect**. Usually, this works as expected. However, if you must block the browser from repainting the screen, you need to replace `useEffect` with `useLayoutEffect`.
 - Effects **only run on the client**. They don't run during server rendering.
+
+## Usage
+
+### Connecting to an external system
+
+Some components need to stay connected to the network, some browser API, or a third-party library, while they are displayed on the page. These systems aren't controlled by React, so they are called _external_.
+
+To [connect your component to some external system](https://react.dev/learn/synchronizing-with-effects), call `useEffect` at the top level of your component:
+
+```js
+import { useState, useEffect } from "react";
+import { createConnection } from "./chat.js";
+
+function ChatRoom({ roomId }) {
+  const [serverUrl, setServerUrl] = useState("https://localhost:1234");
+
+  useEffect(() => {
+    const connection = createConnection(serverUrl, roomId);
+    connection.connect();
+    return () => {
+      connection.disconnect();
+    };
+  }, [serverUrl, roomId]);
+}
+```
+
+You need to pass two arguments to `useEffect`:
+
+1. A _setup function_ with setup code that connects to that system.
+   - It should return a _cleanup function_ with cleanup code that disconnects from that system.
+2. A list of dependencies including every value from your component used inside of those functions.
+
+**React calls your setup and cleanup functions whenever it's necessary, which may happen multiple times:**
+
+1. Your setup code runs when your component is added to the page (mounts).
+2. After every re-render of your component where the dependencies have changed:
+   - First, your cleanup code runs with the old props and state.
+   - Then, your setup code runs with the new props and state.
+3. Your cleanup code runs one final time after your component is removed from the page (unmounts).
+
+**Let's illustrate this sequence for the example above.**
+
+when the `ChatRoom` component above gets added to the page, it will connect to the chat room with the initial `serverUrl` and `roomId`. If either `serverUrl` or `roomId` change as a result of a re-render (say, if the user picks a different chat room in a dropdown), your Effect will _disconnect from the previous room, and connect to the next one_. When the `ChatRoom` component is removed from the page, your Effect will disconnect one last time.
+
+**To help you find bugs, in development React runs setup and cleanup one extra time before the setup.** This is a stress-test that verifies your Effect's logic is implemented correctly. If this causes visible issues, your cleanup function is missing some logic. The cleanup function should stop or undo whatever the setup function was doing. The rule of thumb is that the user shouldn't be able to distinguish between the setup being called once (as in production) and a setup → cleanup → setup sequence (as in development). [See common solutions.](https://react.dev/learn/synchronizing-with-effects#how-to-handle-the-effect-firing-twice-in-development)
+
+**Try to write every Effect as an independent process and think about a single setup/cleanup cycle at a time.** It shouldn't matter whetehr your component is mounting, updating, or unmounting. When your cleanup logic correctly "mirrors" the setup logic, your Effect is resilient to running setup and cleanup as often as needed.
+
+> ## Note
+>
+> An Effect lets you keep your component synchronized with some external system (like a chat service). Here, _external system_ means any piece of code that's not controlled by React, such as:
+>
+> - A timer managed with `setInterval()` and `clearInterval()`.
+> - An event subscription using `window.addEventListener()` and `window.removeEventListener()`.
+> - A third-party animation library with an API like `animation.start()` and `animation.reset()`.
+>
+> **If you're not connecting to any external system, you probably don't need an Effect.**
+
+### Wrapping Effects in custom Hooks
+
+Effects are an ["escape hatch"](https://react.dev/learn/escape-hatches): you use them when you need to "step outside React" and when there is no better built-in solution for your use case. If you find yourself often needing to manually write Effects, it's usually a sign that you need to extract some [custom Hooks](https://react.dev/learn/reusing-logic-with-custom-hooks) for common behaviors your components rely on.
+
+For example, this `useChatRoom` custom Hook "hides" the logic of your Effect behind a more declarative API:
+
+```js
+function useChatRoom({ serverUrl, roomId }) {
+  useEffect(() => {
+    const options = {
+      serverUrl: serverUrl,
+      roomId: roomId,
+    };
+    const connection = createConnection(options);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId, serverUrl]);
+}
+```
+
+Then you can use it from any component like this:
+
+```js
+function ChatRoom({ roomId }) {
+  const [serverUrl, setServerUrl] = useState("https://localhost:1234");
+
+  useChatRoom({
+    roomId: roomId,
+    serverUrl: serverUrl,
+  });
+  // ...
+}
+```
+
+There are also many excellent custom Hooks for every purpose available in the React ecosystem.
+
+[Learn more about wrapping Effects in custom Hooks](https://react.dev/learn/reusing-logic-with-custom-hooks).
+
+### Controlling a non-React widget
+
+Sometimes, you want to keep an external system synchronized to some prop or state of your component.
