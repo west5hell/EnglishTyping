@@ -148,3 +148,101 @@ There are also many excellent custom Hooks for every purpose available in the Re
 ### Controlling a non-React widget
 
 Sometimes, you want to keep an external system synchronized to some prop or state of your component.
+
+For example, if you have a third-party map widget or a video player component written without React, you can use an Effect to call methods on it that make its state match the current state of your React component. This Effect creates an instance of a `MapWidget` class defined in `map-widget.js`. When you change the `zoomLevel` prop of the `Map` component, the Effect calls the `setZoom()` on the class instance to keep it synchronized:
+
+```js
+export default function Map({ zoomLevel }) {
+  const containerRef = useRef(null);
+  const mapRef = useRef(null);
+
+  useEffect(() => {
+    if (mapRef.current === null) {
+      mapRef.current = new MapWidget(containerRef.current);
+    }
+
+    const map = mapRef.current;
+    map.setZoom(zoomLevel);
+  }, [zoomLevel]);
+
+  return <div style={{ width: 200, height: 200 }} ref={containerRef} />;
+}
+```
+
+In this example, a cleanup function is not needed because the `MapWidget` class manages only the DOM node that was passed to it. After the `Map` React component is removed from the tree, both the DOM node and the `MapWidget` class instance will automatically garbage-collected by the browser JavaScript engine.
+
+### Fetching data with Effects
+
+You can use an Effect to fetch data for your component. Note that [if you use a framework](https://react.dev/learn/start-a-new-react-project#production-grade-react-frameworks), using your framework's data fetching mechanism will be a lot more efficient than writing Effects manually.
+
+If you want to fetch data from an Effect manually, your code might look like this:
+
+```js
+export default function Page() {
+  const [person, setPerson] = useState("Alice");
+  const [bio, setBio] = useState(null);
+
+  useEffect(() => {
+    let ignore = false;
+    setBio(null);
+    fetchBio(person).then((result) => {
+      if (!ignore) {
+        setBio(result);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
+  }, [person]);
+
+  // ...
+}
+```
+
+Note the `ignore` variable which is initialized to `false`, and is set to `true` during cleanup. This ensures your code doesn't suffer from "race conditions": network responses may arrive in a different order than you sent them.
+
+You can also rewrite using the `async` / `await` syntax, but you still need to provide a cleanup function:
+
+```js
+export default function Page() {
+  const [person, setPerson] = useState("Alice");
+  const [bio, setBio] = useState(null);
+  useEffect(() => {
+    async function startFetching() {
+      setBio(null);
+      const result = await fetchBio(person);
+      if (!ignore) {
+        setBio(result);
+      }
+    }
+
+    let ignore = false;
+    startFetching();
+    return () => {
+      ignore = true;
+    };
+  }, [person]);
+}
+```
+
+Writing data fetching directly in Effects gets reprtitve and makes it difficult to add optimizations like caching and server rendering later. It's easier to use a custom Hook--either your own or mantained by the community.
+
+> DEEP DIVE
+>
+> ### What are good alternatives to data fetching in Effects?
+>
+> Writing `fetch` calls inside Effects is a popular way to fetch data, expecially in fully client-side apps. This is, however, a very manual approach and it has significant downsides:
+>
+> - **Effects don't run on the server.** This means that the intial server-rendered HTML will only include a loading state with no data. The client computer will have to download all JavaScript and render your app only to discover that now it needs to load the data. This is not very efficient.
+> - **Fetching directly in Effects makes it easy to create "network waterfalls".** You render the parent component, it fetches some data, renders the child components, and then they start fetching their data. If the network is not very fast, this is significantly slower than fetching all data in parallel.
+> - **Fetching directly in Effects usually means you don't preload or cache data.** For example, if the component unmounts and then mounts again, it would have to fetch the data again.
+> - **It's not very ergonomic.** There's quite a bit of boilerplate code involved when writing `fetch` calls in a way that doesn't suffer from bugs like race conditions.
+>
+> This list of downsides is not specific to React. It applies to fetching data on mount with any library. Like with routing, data fetching is nor trivial to do well, so we recommend the following approaches:
+>
+> - **If you use a framework, use its built-in data fetching mechanism.** Modern React frameworks have integrated data fetching mechanisms that are efficient and don't suffer from the above pitfalls.
+> - **Otherwise, consider using or building a client-size cache.** Popular open source solutions include React Query, useSWR, and React Rounter 6.4+. You can build your own solution too, in which case you would use Effects under the hood but also add logic for deduplicating requests, caching responses, and avoiding network waterfalls (by preloading data or hoisting data requiremnents to routes).
+>
+> you can continue fetching data directly in Effects if neither of these approaches suit you.
+
+### Specifying reactive dependencies
