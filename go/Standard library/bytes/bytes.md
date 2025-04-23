@@ -57,3 +57,463 @@ func Compare(a, b []byte) int
 ```
 
 Compare returns an integer comparing two byte slices lexicographically. The result will be 0 if a == b, -1 if a < b, and +1 if a > b. A nil argument is equivalent to an empty slice.
+
+###### Example
+
+```go
+package main
+
+import "bytes"
+
+func main() {
+	// Interpret Compare's result by comparing it to zero.
+	var a, b []byte
+	if bytes.Compare(a, b) < 0 {
+		// a less b
+	}
+	if bytes.Compare(a, b) <= 0 {
+		// a less or equal b
+	}
+	if bytes.Compare(a, b) > 0 {
+		// a greater b
+	}
+	if bytes.Compare(a, b) >= 0 {
+		// a greater or equal b
+	}
+
+	// Prefer Equal to Compare for equality comparisons.
+	if bytes.Equal(a, b) {
+		// a equal b
+	}
+	if !bytes.Equal(a, b) {
+		// a not equal b
+	}
+}
+```
+
+###### Example (Search)
+
+```go
+package main
+
+import (
+	"bytes"
+	"slices"
+)
+
+func main() {
+	// Binary search to find a matching byte slice.
+	var needle []byte
+	var haystack [][]byte	// Assume sorted
+	_, found := slices.BinarySearchFunc(haystack, needle, bytes.Compare)
+	if founc {
+		// Fount it!
+	}
+}
+```
+
+### func Contains
+
+```go
+func Contains(b, subslice []byte) bool
+```
+
+Contains reports whether subslice is within b.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.Contains([]byte("seafood"), []byte("foo")))
+	fmt.Println(bytes.Contains([]byte("seafood"), []byte("bar")))
+	fmt.Println(bytes.Contains([]byte("seafood"), []byte("")))
+	fmt.Println(bytes.Contains([]byte(""), []byte("")))
+}
+```
+
+### func ContainsAny
+
+```go
+func ContainsAny(b []byte, chars string) bool
+```
+
+ContainsAny reports whether any of the UTF-8-encoded code points in chars are within b.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.ContainsAny([]byte("I like seafood."), "fÄo!"))
+	fmt.Println(bytes.ContainsAny([]byte("I like seafood."), "去是伟大的."))
+	fmt.Println(bytes.ContainsAny([]byte("I like seafood."), ""))
+	fmt.Println(bytes.ContainsAny([]byte(""), ""))
+}
+```
+
+### func ContainsFunc
+
+```go
+func ContainsFunc(b []byte, f func(rune) bool) bool
+```
+
+ContainsFunc reports whether any of the UTF-8-encoded code points r within b satify f(r).
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	f := func(r rune) bool {
+		return r >= 'a' && r <= 'z'
+	}
+	fmt.Println(bytes.ContainsFunc([]byte("HELLO"), f))
+	fmt.Println(bytes.ContainsFunc([]byte("World"), f))
+}
+```
+
+### func ContainsRune
+
+```go
+func ContainsRune(b []byte, r rune) bool
+```
+
+ContainsRune reports whether the rune is containted in the UTF-8-encoded byte slice b.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.ContainsRune([]byte("I like seafood."), 'f'))
+	fmt.Println(bytes.ContainsRune([]byte("I like seafood."), 'ö'))
+	fmt.Println(bytes.ContainsRune([]byte("去是伟大的!"), '大'))
+	fmt.Println(bytes.ContainsRune([]byte("去是伟大的!"), '!'))
+	fmt.Println(bytes.ContainsRune([]byte(""), '@'))
+}
+```
+
+### func Count
+
+```go
+func Count(s, sep []byte) int
+```
+
+Count counts the number of non-overlapping instances of sep in s. If sep is an empty slice, Count returns 1 + the number of UTF-8-encoded code points in s.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.Count([]byte("cheese"), []byte("e")))
+	fmt.Println(bytes.Count([]byte("five"), []byte("")))	// before & after each rune
+}
+```
+
+### func Cut
+
+```go
+func Cut(s, sep []byte) (before, after []byte, found bool)
+```
+
+Cut slices a around the first instance of sep, returning the next before and after sep. The found result reports whether sep appears in s. If sep does not appear in s, cut returns s, nil, false.
+
+Cut returns slices of the original slice s, not copies.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	show := func(s, sep string) {
+		before, after found := bytes.Cut([]byte(s), []byte(sep))
+		fmt.Println("Cut(%q, %q) = %q, %q, %v\n", s, sep, before, after, found)
+	}
+	show("Gopher", "Go")		//	Cut("Gopher", "Go") = "", "pher", true
+	show("Gopher", "ph")		//	Cut("Gopher", "ph") = "Go", "er", true
+	show("Gopher", "er")		//	Cut("Gopher", "er") = "Goph", "", true
+	show("Gopher", "Badger")	//	Cut("Gopher", "Badger") = "Gopher", "", false
+}
+```
+
+### func CutPrefix
+
+```go
+func CutPrefix(s, prefix []byte) (after []byte, found bool)
+```
+
+CutPrefix returns s without the provided leading prefix byte slice and reports whether it found the prefix. If s doesn't start with prefix, CutPrefix returns s, false. If prefix is the empty byte slice, CutPrefix returns s, true.
+
+CutPrefix returns slices of the original slice s, not copies.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	show := func(s, sep string) {
+		after, found := bytes.CutPrefix([]byte(s), []byte(sep))
+		fmt.Printf("CutPrefix(%q, %q) = %q, %v\n", s, sep, after, found)
+	}
+	show("Gopher", "Go")	//	CutPrefix("Gopher", "Go") = "pher", true
+	show("Gopher", "ph")	//	CutPrefix("Gopher", "ph") = "Gopher", false
+}
+```
+
+### func CutSuffix
+
+```go
+func CutSuffix(s, suffix []byte) (before []byte, found bool)
+```
+
+CutSuffix returns a without the provided ending suffix byte slice and reports whether it found the suffix. If s doesn't end with suffix, CutSuffix returns s, false. If suffix is the empty byte slice, CutSuffix returns s, true.
+
+CutSuffix returns slices of the original slice s, not copies.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	show := func(s, sep string) {
+		before, found := bytes.CutSuffix([]byte(s), []byte(sep))
+		fmt.Printf("CutSuffix(%q, %q) = %q, %v\n", s, sep, before, found)
+	}
+	show("Gopher", "Go")	//	CutSuffix("Gopher", "Go") = "Gopher", false
+	show("Gopher", "er")	//	CutSuffix("Gopher", "er") = "Goph", true
+}
+```
+
+### func Equal
+
+```go
+func Equal(a, b []byte) bool
+```
+
+Equal reports whether a and b are the same length and contain the same bytes. A nil argument is equivalent to an empty slice.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.Equal([]byte("Go"), []byte("Go")))	//	true
+	fmt.Println(bytes.Equal([]byte("Go"), []byte("C++")))	// false
+}
+```
+
+### func EqualFold
+
+```go
+func EqualFold(s, t []byte) bool
+```
+
+EqualFold reports whether s and t, interpreted as UTF-8 strings, are equal under simple Unicode case-folding, which is a more general form of case-insensitivity.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.EqualFold([]byte("Go"), []byte("go")))	//	true
+}
+```
+
+### func Fields
+
+```go
+func Fields(s []byte) [][]byte
+```
+
+Fields interprets s as a sequence of UTF-8-encoded code points. It splits the slice a around each instance of one or more consecutive white space characters, as defined by unicode.IsSpace, returning s slice of subslices of s or an empty slice is s contains only white space.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("Fields are: %q", bytes.Fields([]byte("  foo bar  baz   ")))	// Fields are: ["foo" "bar" "baz"]
+}
+```
+
+### func FieldsFunc
+
+```go
+func FieldsFunc(s []byte, f func(rune) bool) [][]byte
+```
+
+FieldsFunc interprets s as s sequence of UTF-8-encoded code points. It splits the slice s at each run of code points c satisfying f(c) and returns a slice of subslices of s. If all code points in s satisfy f(c), or len(s) == 0, an empty slice is returned.
+
+FieldsFunc makes no guarantees about the order in which it calls f(c) and assumes that f always returns the same value for a given c.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"unicode"
+)
+
+func main() {
+	f := func(c rune) bool {
+		return !unicode.IsLetter(c) && !unicode.IsNumber(c)
+	}
+	fmt.Printf("Fields are: %q", bytes.FieldsFunc([]byte("  foo1;bar2,baz3..."), f))	//	Fields are: ["foo1" "bar2" "baz3"]
+}
+```
+
+### func FieldsFuncSeq
+
+```go
+func FieldsFuncSeq(s []byte, f func(rune) bool) iter.Seq[[]byte]
+```
+
+FieldsFuncSeq returns an iterator over subslices of s split around runs of Unicode code points satisfying f(c). The iterator yields the same subslices that would be returned by FieldsFunc(s), but without constructing a new slice containing the subslices.
+
+### func FieldsSeq
+
+```go
+func FieldsSeq(s []byte) iter.Seq[[]byte]
+```
+
+FieldsSeq returns an iterator over subslices of s split around runs of whitespace characters, as defined by unicode.IsSpace. The iterator yields the same subslices that would be returned by Fields(s), but without constructing a new slice containint the subslices.
+
+### func HasPrefix
+
+```go
+func HasPrefix(s, prefix []byte) bool
+```
+
+HasPrefix reports whether the byte slice s begins with prefix.
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.HasPrefix([]byte("Gopher"), []byte("Go")))	// true
+	fmt.Println(bytes.HasPrefix([]byte("Gopher"), []byte("C")))		// false
+	fmt.Println(bytes.HasPrefix([]byte("Gopher"), []byte("")))		// true
+}
+```
+
+### func Index
+
+```go
+func Index(s, sep []byte) int
+```
+
+Index returns the idnex of the first instance of sep in s, or -1 if sep is not present in s.
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.Index([]byte("chicken"), []byte("ken")))	// 4
+	fmt.Println(bytes.Index([]byte("chicken"), []byte("dmr")))	// -1
+}
+```
+
+### func IndexAny
+
+```go
+func IndexAny(s []byte, chars string) int
+```
+
+IndexAny interprets s as a sequence of UTF-8-encoded Unicode code points. It returns the byte index of the first occurrence in s of any of the Unicode code points in chars. It returns -1 if chars is empty or if there is no code point in common.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.IndexAny([]byte("chicken"), "aeiouy"))	// 2
+	fmt.Println(bytes.IndexAny([]byte("crwth"), "aeiouy"))		// -1
+}
+```
