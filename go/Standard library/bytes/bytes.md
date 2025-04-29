@@ -591,3 +591,52 @@ func main() {
 	fmt.Println(bytes.IndexRune([]byte("chicken"), 'd'))	// -1
 }
 ```
+
+### func Join
+
+```go
+func Join(s [][]byte, sep []byte) []byte
+```
+
+Join concatenates the elements of s to create a new byte slice. The separator sep is placed between elements in the resulting slice.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	s := [][]byte{[]byte("foo"), []byte("bar"), []byte("baz")}
+	fmt.Printf("%s", bytes.Join(s, []byte(", ")))	// foo, bar, baz
+}
+```
+
+### func LastIndex
+
+```go
+func LastIndex(s, sep []byte) int
+```
+
+LastIndex returns the index of the last instance of sep in s, or -1 if sep is not present in s.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.Index([]byte("go gopher"), []byte("go")))			// 0
+	fmt.Println(bytes.LastIndex([]byte("go gopher"), []byte("go")))		// 3
+	fmt.Println(bytes.LastIndex([]byte("go gopher"), []byte("rodent")))	// -1
+}
+```
