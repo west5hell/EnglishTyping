@@ -517,3 +517,77 @@ func main() {
 	fmt.Println(bytes.IndexAny([]byte("crwth"), "aeiouy"))		// -1
 }
 ```
+
+### func IndexByte
+
+```go
+func IndexByte(b []byte, c byte) int
+```
+
+IndexByte returns the index of the first instance of c in b, or -1 if c is not present in b.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.IndexByte([]byte("chicken"), byte('k')))	// 4
+	fmt.Println(bytes.IndexByte([]byte("chicken"), byte('g')))	// -1
+}
+```
+
+### func IndexFunc
+
+```go
+func IndexFunc(s []byte, f func(r rune) bool) int
+```
+
+IndexFunc interprets s as a sequence of UTF-8-encoded code points. It returns the byte index in s of the first Unicode code point satisfying f(c), or -1 if none do.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"unicode"
+)
+
+func main() {
+	f := func(c rune) bool {
+		return unicode.Is(unicode.Han, c)
+	}
+	fmt.Println(bytes.IndexFunc([]byte("Hello, 世界"), f))		// 7
+	fmt.Println(bytes.IndexFunc([]byte("Hello, world"), f))		// -1
+}
+```
+
+### func IndexRune
+
+```go
+func IndexRune(s []byte, r rune) int
+```
+
+IndexRune interprets s as a sequence of UTF-8-encoded code points. It returns the byte index of the first occurrence in s of the given rune. It returns -1 if rune is not present in s. If r is `utf8.RuneError`, it returns the first instance of any invalid UTF-8 byte sequence.
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.IndexRune([]byte("chicken"), 'k'))	// 4
+	fmt.Println(bytes.IndexRune([]byte("chicken"), 'd'))	// -1
+}
+```
