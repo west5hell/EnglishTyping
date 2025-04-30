@@ -640,3 +640,79 @@ func main() {
 	fmt.Println(bytes.LastIndex([]byte("go gopher"), []byte("rodent")))	// -1
 }
 ```
+
+### func LastIndexAny
+
+```go
+func LastIndexAny(s []byte, chars string) int
+```
+
+LastIndexAny interprets s as a sequence of UTF-8-encoded Unicode code points. It returns the byte index of the last occurrence in s of any of the Unicode code points in chars. It returns -1 if chars is empty or if there is no code point in common.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.LastIndexAny([]byte("go gopher"), "MüQp"))	// 5
+	fmt.Println(bytes.LastIndexAny([]byte("go 地鼠"), "地大"))		// 3
+	fmt.Println(bytes.LastIndexAny([]byte("go gopher"), "z,!."))	// -1
+}
+```
+
+### func LastIndexByte
+
+```go
+func LastIndexByte(s []byte, c byte) int
+```
+
+LastIndexByte returns the index of the last instance of c in s, or -1 if c is not present in s.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Println(bytes.LastIndexByte([]byte("go gopher"), byte('g')))	// 3
+	fmt.Println(bytes.LastIndexByte([]byte("go gopher"), byte('r')))	// 8
+	fmt.Println(bytes.LastIndexByte([]byte("go gopher"), byte('z')))	// -1
+}
+```
+
+### func LastIndexFunc
+
+```go
+func LastIndexFunc(s []byte, f func(r rune) bool) int
+```
+
+LastIndexFunc interprets s as a sequence of UTF-8-encoded code points. It returns the byte index in s of the last Unicode code point satisfying f(c), or -1 if none do.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"unicode"
+)
+
+func main() {
+	fmt.Println(bytes.LastIndexFunc([]byte("go gopher!"), unicode.IsLetter))	// 8
+	fmt.Println(bytes.LastIndexFunc([]byte("go gopher!"), unicode.IsPunct))		// 9
+	fmt.Println(bytes.LastIndexFunc([]byte("go gopher!"), unicode.IsNumber))	// -1
+}
+```
