@@ -716,3 +716,169 @@ func main() {
 	fmt.Println(bytes.LastIndexFunc([]byte("go gopher!"), unicode.IsNumber))	// -1
 }
 ```
+
+### func Lines
+
+```go
+func Lines(s []byte) iter.Seq[[]byte]
+```
+
+Lines returns an iterator over the newline-terminated lines in the byte slice s. The lines yielded by the iterator include their terminating newlines. If s is empty, the iterator yields no lines at all. If s does not end in a newline, the final yielded line will not end in a newline. It returns a single-user iterator.
+
+### func Map
+
+```go
+func Map(mapping func(r rune) rune, s []byte) []byte
+```
+
+Map returns a copy of the byte slice s with all its characters modified according to the mapping function. If mapping returns a negative value, the character is dropped from the byte slice with no replacement. The characters in s and the output are interpreted as UTF-8-encoded code points.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	rot13 := func(r rune) rune {
+		switch {
+			case r >= 'A' && r <= 'Z':
+				return 'A' + (r-'A'+13)%26
+			case r >= 'a' && r <= 'z':
+				return 'a' + (r-'a'+13)%26
+		}
+		return r
+	}
+	fmt.Printf("%s\n", bytes.Map(rot13, []byte("'Twas brillig and the slithy gopher...")))	// 'Gjnf oevyyvt naq gur fyvgul tbcure...
+}
+```
+
+### func Repeat
+
+```go
+func Repeat(b []byte, count int) []byte
+```
+
+Repeat returns a new byte slice consisting of count copies of b.
+
+It panics if count is negative or if the result of (len(b) \* count) overflows.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("ba%s", bytes.Repeat([]byte("na"), 2))	// banana
+}
+```
+
+### func Replace
+
+```go
+func Replace(s, old, new []byte, n int) []byte
+```
+
+Replace returns a copy of the slice s with the first n non-overlapping instances of old replaced by new. If old is empty, it matches at the beginning of the slice and after each UTF-8 sequence, yielding up to k+1 replacements for a k-rune slice. If n < 0, there is no limit on the number of replacements.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%s\n", bytes.Replace([]byte("oink oink oink"), []byte("k"), []byte("ky"), 2))		// oinky oinky oink
+	fmt.Printf("%s\n", bytes.Replace([]byte("oink oink oink"), []byte("oink"), []byte("moo"), -1))	// moo moo moo
+}
+```
+
+### func ReplaceAll
+
+```go
+func ReplaceAll(s, old, new []byte) []byte
+```
+
+ReplaceAll returns a copy of the slice s with all non-overlapping instances of old replaced by new. If old is empty, it matches at the beginning of the slice and after each UTF-8 sequence, yielding up to k+1 replacements for a k-rune slice.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%s\n", bytes.ReplaceAll([]byte("oink oink oink"), []byte("oink"), []byte("moo")))	// moo moo moo
+}
+```
+
+### func Runes
+
+```go
+func Runes(s []byte) []rune
+```
+
+Runes interprets s as a sequence of UTF-8-encoded code points. It returns a slice of runes (Unicode code points) equivalent to s.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	rs := bytes.Runes([]byte("go gopher"))
+	for _, r := range rs {
+		fmt.Printf("%#U\n", r)
+	}
+}
+```
+
+### func Split
+
+```go
+func Split(s, sep []byte) [][]byte
+```
+
+Split slice s into all subslices separated by sep and returns a slice of the subslices between those sepatators. If sep is empty, Split splits after each UTF-8 sequence. It is equivalent to SplitN with a count of -1.
+
+To split around the first instance of a separator, see `Cut`.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%q\n", bytes.Split([]byte("a,b,c"), []byte(",")))							// ["a" "b" "c"]
+	fmt.Printf("%q\n", bytes.Split([]byte("a man a plan a canal panama"), []byte("a ")))	// ["" "man " "plan " "canal panama"]
+	fmt.Printf("%q\n", bytes.Split([]byte(" xyz "), []byte("")))							// [" " "x" "y" "z" " "]
+	fmt.Printf("%q\n", bytes.Split([]byte(""), []byte("Bernardo O'Higgins")))				// [""]
+}
+```
