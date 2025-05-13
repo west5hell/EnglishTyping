@@ -882,3 +882,498 @@ func main() {
 	fmt.Printf("%q\n", bytes.Split([]byte(""), []byte("Bernardo O'Higgins")))				// [""]
 }
 ```
+
+### func SplitAfter
+
+```go
+func SplitAfter(s, sep []byte) [][]byte
+```
+
+SplitAfter slices s into all subslices after each instance of sep and returns a slice of those subslices. If sep is empty, SplitAfter splits after each UTF-8 sequence. It is equivalent to SplitAfterN with a count of -1.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%q\n", bytes.SplitAfter([]byte("a,b,c"), []byte(",")))	// ["a," "b," "c"]
+}
+```
+
+### SplitAfterN
+
+```go
+func SplitAfterN(s, sep []byte, n int) [][]byte
+```
+
+SplitAfterN slices s into subslices after each instance of sep and returns a slice of those subslices. If sep is empty, SplitAfterN splits after each UTF-8 sequence. The count determines the number of subslices to return:
+
+- n > 0: at most n subslices; the last subslice will be the unsplit remainder;
+- n == 0: the result is nil (zero subslices);
+- n < 0: all subslices.
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%q\n", bytes.SplitAfterN([]byte("a,b,c"), []byte(","), 2))	// ["a," "b,c"]
+}
+```
+
+### func SplitAfterSeq
+
+```go
+func SplitAfterSeq(s, sep []byte) iter.Seq[[]byte]
+```
+
+SplitAfterSeq returns an iterator over subslices of s split after each instance of sep. The iterator yields the same subslices that would be returned by SplitAfter(s, sep), but without constructing a new slcie containing the subslices. It returns a single-use iterator.
+
+### func SplitN
+
+```go
+func SplitN(s, sep []byte, n int) [][]byte
+```
+
+SplitN slices s into subslices separated by sep and returns a slice of the subslices between those separators. If sep is empty, SplitN splits after each UTF-8 sequence. The count determines the number of subslices to return:
+
+- n > 0: at most n subslices; the last subslice will be the unsplit remainder;
+- n == 0: the result is nil (zero subslices);
+- n < 0: all subslices.
+
+To split around the first instance of s separator, see Cut.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%q\n", bytes.SplitN([]byte("a,b,c"), []byte(","), 2))	// ["a" "b,c"]
+	z := bytes.SplitN([]byte("a,b,c"), []byte(","), 0)
+	fmt.Printf("%q (nil = %v)\n", z, z == nil)	// [] (nil = true)
+}
+```
+
+### func SplitSeq
+
+```go
+func SplitSeq(s, sep []byte) iter.Seq[[]byte]
+```
+
+SplitSeq returns an iterator over all subslices of s separated by sep. The iterator yields the same subslices that would be returned by Split(s, sep), but without constructing a new slice containing the subslices. It returns a single-use iterator.
+
+### func ToLower
+
+```go
+func ToLower(s []byte) []byte
+```
+
+ToLower returns a copy of the byte slice s with all Unicode letters mapped to their lower case.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%s", bytes.ToLower([]byte("Gopher")))	// gopher
+}
+```
+
+### func ToLowerSpecial
+
+```go
+func ToLowerSpecial(c unicode.SpecialCase, s []byte) []byte
+```
+
+ToLowerSpecial treats s as UTF-8-encoded bytes and returns a copy with all the Unicode letters mapped to their lower case, giving priority to the special casing rules.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"unicode"
+)
+
+func main() {
+	str := []byte("AHOJ VÝVOJÁRİ GOLANG")
+	totitle := bytes.ToLowerSpecial(unicode.AzeriCase, str)
+	fmt.Println("Original : " + string(str))	//	Original : AHOJ VÝVOJÁRİ GOLANG
+	fmt.Println("ToLower : " + string(totitle))	//	ToLower : ahoj vývojári golang
+}
+```
+
+### func ToTitle
+
+```go
+func ToTitle(s []byte) []byte
+```
+
+ToTitle treats s as UTF-8-encoded bytes and returns a copy with all the Unicode letters mapped to their title Case.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%s\n", bytes.ToTitle([]byte("loud noises")))	//	LOUD NOISES
+	fmt.Printf("%s\n", bytes.ToTitle([]byte("брат")))			//	БРАТ
+}
+```
+
+### func ToTitleSpecial
+
+```go
+func ToTitleSpecial(c unicode.SpecialCase, s []byte) []byte
+```
+
+ToTitleSpecial treats s as UTF-8-encoded bytes and returns a copy with the Unicode letters mapped to their title case, giving priority to the special casing rules.
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"unicode"
+)
+
+func main() {
+	str := []byte("ahoj vývojári golang")
+	totitle := bytes.ToTitleSpecial(unicode.AzeriCase, str)
+	fmt.Println("Original : " + string(str))	//	Original : ahoj vývojári golang
+	fmt.Println("ToTitle : " + string(totitle))	//	ToTitle : AHOJ VÝVOJÁRİ GOLANG
+}
+```
+
+### func ToUpper
+
+```go
+func ToUpper(s []byte) []byte
+```
+
+ToUpper returns a copy of the byte slice s with all Unicode letters mapped to their upper case.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%s", bytes.ToUpper([]byte("Gopher")))	//	GOPHER
+}
+```
+
+### func ToUpperSpecial
+
+```go
+func ToUpperSpecial(c unicode.SpecialCase, s []byte) []byte
+```
+
+ToUpperSpecial treats s as UTF-8-encoded bytes and returns a copy with all the Unicode letters mapped to their upper case, giving priority to the special casing rules.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"unicode"
+)
+
+func main() {
+	str := []byte("ahoj vývojári golang")
+	totitle := bytes.ToUpperSpecial(unicode.AzeriCase, str)
+	fmt.Println("Original : " + string(str))	//	Original : ahoj vývojári golang
+	fmt.Println("ToUpper : " + string(totitle))	//	ToUpper : AHOJ VÝVOJÁRİ GOLANG
+}
+```
+
+### func ToValidUTF8
+
+```go
+func ToValidUTF8(s, replacement []byte) []byte
+```
+
+ToValidUTF8 treats s as UTF-8-encoded bytes and returns a copy with each run of bytes representing invalid UTF-8 replaced with bytes in replacement, which may be empty.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%s\n", bytes.ToValidUTF8([]byte("abc"), []byte("\uFFFD")))				//	abc
+	fmt.Printf("%s\n", bytes.ToValidUTF8([]byte("a\xffb\xC0\xAFc\xff"), []byte("")))	//	abc
+	fmt.Printf("%s\n", bytes.ToValidUTF8([]byte("\xed\xa0\x80"), []byte("abc")))		//abc
+}
+```
+
+### func Trim
+
+```go
+func Trim(s []byte, cutset string) []byte
+```
+
+Trim returns a subslice of s by slicing off all leading and trailing UTF-8-encoded code points contained in cutset.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("[%q]", bytes.Trim([]byte(" !!! Achtung! Achtung! !!! "), "! "))	// ["Achtung! Achtung]
+}
+```
+
+### func TrimFunc
+
+```go
+func TrimFunc(s []byte, f func(r rune) bool) []byte
+```
+
+TrimFunc returns a subslice of s by slicing off all leading and trailing UTF-8-encoded code points c that satisfy f(c).
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"unicode"
+)
+
+func main() {
+	fmt.Println(string(bytes.TrimFunc([]byte("go-gopher!"), unicode.IsLetter)))			// -gopher!
+	fmt.Println(string(bytes.TrimFunc([]byte("\"go-gopher!\""), unicode.IsLetter)))		// "go-gopher!"
+	fmt.Println(string(bytes.TrimFunc([]byte("go-gopher!"), unicode.IsPunct)))			// go-gopher
+	fmt.Println(string(bytes.TrimFunc([]byte("1234go-gopher!567"), unicode.IsNumber)))	// go-gopher!
+}
+```
+
+### func TrimLeft
+
+```go
+func TrimLeft(s []byte, cutset string) []byte
+```
+
+TrimLeft returns a subslice of s by slicing off all leading UTF-8-encoded code points contained in cutset.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Print(string(bytes.TrimLeft([]byte("453gopher8257"), "0123456789")))	// gopher8257
+}
+```
+
+### func TrimLeftFunc
+
+```go
+func TrimLeftFunc(s []byte, f func(r rune) bool) []byte
+```
+
+TrimLeftFunc treats s as UTF-8-encoded bytes and returns a subslice of s by slicing off all leading UTF-8-encoded code points c that satisfy f(c).
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"unicode"
+)
+
+func main() {
+	fmt.Println(string(bytes.TrimLeftFunc([]byte("go-gopher"), unicode.IsLetter)))			// -gopher
+	fmt.Println(string(bytes.TrimLeftFunc([]byte("go-gopher!"), unicode.IsPunct)))			// go-gopher!
+	fmt.Println(string(bytes.TrimLeftFunc([]byte("1234go-gopher!567"), unicode.IsNumber)))	// go-gopher!567
+}
+```
+
+### func TrimPrefix
+
+```go
+func TrimPrefix(s, prefix []byte) []byte
+```
+
+TrimPrefix returns s without the provided leading prefix string. If s doesn't start with prefix, s is returned unchanged.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	var b = []byte("Goodbye,, world!")
+	b = bytes.TrimPrefix(b, []byte("Goodbye,"))
+	b = bytes.TrimPrefix(b, []byte("See ya,"))
+	fmt.Printf("Hello%s", b)	// Hello, world!
+}
+```
+
+### func TrimRight
+
+```go
+func TrimRight(s []byte, cutset string) []byte
+```
+
+TrimRight returns a subslice of s by slicing off all trailing UTF-8-encoded code points that are contained in cutset.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Print(string(bytes.TrimRight([]byte("453gopher8257"), "0123456789")))	// 453gopher
+}
+```
+
+### func TrimRightFunc
+
+```go
+func TrimRightFunc(s []byte, f func(r rune) bool) []byte
+```
+
+TrimRightFunc returns a subslice of s by slicing off all trailing UTF-8-encoded code points c that satisfy f(c).
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"unicode"
+)
+
+func main() {
+	fmt.Println(string(bytes.TrimRightFunc([]byte("go-gopher"), unicode.IsLetter)))			//	go-
+	fmt.Println(string(bytes.TrimRightFunc([]byte("go-gopher!"), unicode.IsPunct)))			//	go-gopher
+	fmt.Println(string(bytes.TrimRightFunc([]byte("1234go-gopher!567"), unicode.IsNumber)))	//	1234go-gopher!
+}
+```
+
+### func TrimSpace
+
+```go
+func TrimSpace(s []byte) []byte
+```
+
+TrimSpace returns a subslice of s by slicing off all leading and trailing white space, as defined by Unicode.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("%s", bytes.TrimSpace([]byte(" \t\n a lone gopher \n\t\r\n")))	//	a lone gopher
+}
+```
+
+### func TrimSuffix
+
+```go
+func TrimSuffix(s, suffix []byte) []byte
+```
+
+TrimSuffix returns s without the provided trailing suffix string. If s doesn't end with suffix, s is returned unchanged.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"os"
+)
+
+func main() {
+	var b = []byte("Hello, goodbye, etc!")
+	b = bytes.TrimSuffix(b, []byte("goodbye, etc!"))
+	b = bytes.TrimSuffix(b, []byte("gopher"))
+	b = append(b, bytes.TrimSuffix([]byte("world!"), []byte("x!"))...)
+	os.Stdout.Write(b)
+
+	// Hello, world!
+}
+```
