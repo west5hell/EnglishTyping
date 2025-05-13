@@ -1377,3 +1377,224 @@ func main() {
 	// Hello, world!
 }
 ```
+
+## Type
+
+### type Buffer
+
+```go
+type Buffer struct {
+	// contains filtered or unexported fields
+}
+```
+
+A Buffer is a variable-sized buffer of bytes with Buffer.Read and Buffer.Write methods. The zero value for Buffer is an empty buffer ready to use.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"os"
+)
+
+func main() {
+	var b bytes.Buffer	// A Buffer needs no initialization
+	b.Write([]byte("Hello "))
+	fmt.Fprintf(&b, "world!")
+	b.WriteTo(os.Stdout)
+}
+
+// Hello world!
+```
+
+###### Example(Reader)
+
+```go
+package main
+
+import (
+	"bytes"
+	"encoding/base64"
+	"io"
+	"os"
+)
+
+func main() {
+	// A Buffer can turn a string or a []byte into an io.Reader.
+	buf := bytes.NewBufferString("R29waGVycyBydWxlIQ==")
+	dec := base64.NewDecoder(base64.StdEncoding, buf)
+	io.Copy(os.Stdout, dec)
+}
+
+Gophers rule!
+```
+
+### func NewBuffer
+
+```go
+func NewBuffer(buf []byte) *Buffer
+```
+
+NewBuffer creates and initializes a new Buffer using buf as its initial contents. The new Buffer takes ownership of buf, and the caller should not use buf after this call. NewBuffer is intended to prepare a Buffer to read existing data. It can also be used to set the intial size of the internal buffer for writing. To do that, buf should have the desired capacity but a length of zero.
+
+In most cases, new(Buffer) (or just declaring a Buffer variable) is sufficient to intialize a Buffer.
+
+### func NewBufferString
+
+```go
+func NewBufferString(s string) *Buffer
+```
+
+NewBufferString creates and initializes a new Buffer using string s as its initial contents. It is intended to prepare a buffer to read an existing string.
+
+In most cases, new(Buffer) (or just declaring a Buffer variable) is sufficient to initialize a Buffer.
+
+### func (\*Buffer) Available
+
+```go
+func (b *Buffer) Available() int
+```
+
+Available returns how many bytes are unused in the buffer.
+
+### func (\*Buffer) AvailableBuffer() []byte
+
+```go
+func (b *Buffer) AvailableBuffer() []byte
+```
+
+AvailableBuffer returns an empty buffer with b.Available() capacity. This buffer is intended to be appended to and passed to an immediately succeeding Buffer.Write call. The buffer is only valid until the next write operation on b.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"os"
+	"strconv"
+)
+
+func main() {
+	var buf bytes.Buffer
+	for i := 0; i < 4; i++ {
+		b := buf.AvailableBuffer()
+		b = strconv.AppendInt(b, int64(i), 10)
+		b = append(b, ' ')
+		buf.Write(b)
+	}
+	os.Stdout.Write(buf.Bytes())
+}
+// 0 1 2 3
+```
+
+### func (\*Buffer) Bytes
+
+```go
+func (b *Buffer) Bytes() []byte
+```
+
+Bytes returns a slice of length b.Len() holding the unread portion of the buffer. The slice is valid for use only until the next buffer modification (that is, only until the next call to a method like Buffer.Read, Buffer.Write, Buffer.Reset, or Buffer.Truncate). The slice aliases the buffer content at least until the next buffer modification, so immediate changes to the slice will affect the result of future reads.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"os"
+)
+
+func main() {
+	buf := bytes.Buffer{}
+	buf.Write([]byte{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'})
+	os.Stdout.Write(buf.Bytes())
+}
+
+// hello world
+```
+
+### func (\*Buffer) Cap
+
+```go
+func (b *Buffer) Cap() int
+```
+
+Cap returns the capacity of the buffer's underlying byte slice, that is, the total space allocated for the buffer's data.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	buf1 := bytes.NewBuffer(make([]byte, 10))
+	buf2 := bytes.NewBuffer(make([]byte, 0, 10))
+	fmt.Println(buf1.Cap())	// 10
+	fmt.Println(buf2.Cap())	// 10
+}
+```
+
+### func (\*Buffer) Grow
+
+```go
+func (b *Buffer) Grow(n int)
+```
+
+Grow grows the buffer's capacity, if necessary, to guarantee space for another n bytes. After Grow(n), at least n bytes can be written to the buffer without another allocation. If n is negative, Grow will panic. If the buffer can't grow it will panic with ErrTooLarge.
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	var b bytes.Buffer
+	b.Grow(64)
+	bb := b.Bytes()
+	b.Write([]byte("64 bytes or fewer"))
+	fmt.Printf("%q", bb[:b.Len()])	//"61 bytes or fewer"
+}
+```
+
+### func (\*Buffer) Len
+
+```go
+func (b *Buffer) Len() int
+```
+
+Len returns the number of bytes of the unread portion of the buffer; b.Len() == len(b.Bytes()).
+
+###### Example
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+)
+
+func main() {
+	var b bytes.Buffer
+	b.Grow(64)
+	b.Write([]byte("abcde"))
+	fmt.Printf("%d", b.Len())	// 5
+}
+```
