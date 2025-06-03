@@ -183,3 +183,32 @@ fmt.Sprintf("%d %d %#[1]x %#x", 16, 17)
 will yield "16 17 0x10 0x11".
 
 ## Format errors
+
+If an invalid argument is given for a verb, such as providing a string to %d, the generated string will contain a description of the problem, as in these examples:
+
+```shell
+Wrong type or unknown verb: %!verb(type=value)
+	Printf("%d", "hi"):        %!d(string=hi)
+Too many arguments: %!(EXTRA type=value)
+	Printf("hi", "guys"):      hi%!(EXTRA string=guys)
+Too few arguments: %!verb(MISSING)
+	Printf("hi%d"):            hi%!d(MISSING)
+Non-int for width or precision: %!(BADWIDTH) or %!(BADPREC)
+	Printf("%*s", 4.5, "hi"):  %!(BADWIDTH)hi
+	Printf("%.*s", 4.5, "hi"): %!(BADPREC)hi
+Invalid or invalid use of argument index: %!(BADINDEX)
+	Printf("%*[2]d", 7):       %!d(BADINDEX)
+	Printf("%.[2]d", 7):       %!d(BADINDEX)
+```
+
+All errors begin with the string "%!" followed sometimes by a single character (the verb) and end with a parenthesized description.
+
+If an Error or String method triggers a panic when called by a print routine, the fmt package reformats the error message from the panic, decorating it with an indication that it came through the fmt package. For example, if a String method calls panic("bad"), the resulting formatted message will look like
+
+```shell
+%!s(PANIC=bad)
+```
+
+The %!s just shows the print verb in use when the failure occurred. If the panic is caused by a nil receiver to an Error, String, or GoString method, however, the output is the undecorated string, "<nil>".
+
+## Scanning
